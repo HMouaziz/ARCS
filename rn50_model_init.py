@@ -1,4 +1,4 @@
-#Settings
+# Settings
 verbose = False
 
 # Imports
@@ -17,9 +17,13 @@ from tensorflow.keras import layers, losses, optimizers, applications
 from tensorflow.keras.utils import image_dataset_from_directory, plot_model
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+# Ignore Warnings
+import warnings
+warnings.filterwarnings("ignore")
+
 printy("Required libraries were successfully imported...",'n')
 
-#Load Datasets
+# Load Datasets
 directory = r"H:\MyRepositories\ARCS\data\1\crop"
 path_for_data = pathlib.Path(directory)
 
@@ -47,7 +51,7 @@ if verbose is True:
 printy("There are {} images in the training dataset".format(len(train_df)), 'n')
 printy("There are {} images in the validation dataset".format(len(validation_df)), 'n')
 
-#Create Validation and test dataframes
+# Create Validation and test dataframes
 validation_batches = tf.data.experimental.cardinality(validation_df)
 
 if verbose is True:
@@ -60,7 +64,7 @@ validation_df = validation_df.skip(validation_batches // 5)
 if verbose is True:
     print(test_df, "\n",validation_df)
 
-#Show batch of images
+# Show batch of images
 plt.figure(figsize = (20, 20))
 for images, labels in train_df.take(1):
     for i in range(25):
@@ -71,13 +75,13 @@ choice = input("Show image batch? (y/n)")
 if choice == "y":
     plt.show()
 
-#Prefetch
+# Prefetch
 autotune = tf.data.AUTOTUNE
 pf_train = train_df.prefetch(buffer_size = autotune)
 pf_test = test_df.prefetch(buffer_size = autotune)
 pf_val = validation_df.prefetch(buffer_size = autotune)
 
-#Model Creation
+# Model Creation
 
 data_augmentation = tf.keras.Sequential()
 data_augmentation.add(layers.RandomRotation(0.3))
@@ -95,12 +99,12 @@ choice = input("Show base model summary? (y/n)")
 if choice == "y":
     base_model.summary()
 
-# Add classification layers
+#  Add classification layers
 class_num = len(train_df.class_names)
 global_avg = layers.GlobalAveragePooling2D()
 output_layer = layers.Dense(class_num, activation ='softmax')
 
-# Chain layers
+#  Chain layers
 inputs = tf.keras.Input(shape = image_shape)
 x = data_augmentation(inputs)
 x = preprocess_input(inputs)
@@ -114,31 +118,31 @@ choice = input("Show model summary? (y/n)")
 if choice == "y":
     model.summary()
 
-# Plot model
+#  Plot model
 choice = input("Plot model to .png file? (y/n)")
 if choice == "y":
-    plot_model(model, to_file = "model.png", show_shapes = True)
+    plot_model(model, to_file = "rn50_model.png", show_shapes = True)
 
-# Define learning rate schedule and optimiser
+#  Define learning rate schedule and optimiser
 optimizer = optimizers.Adam(learning_rate = optimizers.schedules.CosineDecay(0.001, 500))
 loss = losses.SparseCategoricalCrossentropy()
 
-#Compile Model
+# Compile Model
 model.compile(optimizer = optimizer, loss = loss, metrics = ['accuracy'])
 
-#Train Model
+# Train Model
 history = model.fit(pf_train, validation_data =pf_val, epochs = 1)
 
-#Finetune base model layers
+# Finetune base model layers
 base_model.trainable = True
 for layer in base_model.layers[:100]:
     layer.trainable = False
 
-#Compile after finetune
+# Compile after finetune
 optimizer = optimizers.RMSprop(learning_rate = optimizers.schedules.CosineDecay(0.001, 500))
 model.compile(optimizer = optimizer, loss = loss, metrics = ['accuracy'])
 
-#Continue training model
+# Continue training model
 ft_epoch = 1
 n_epochs =+ ft_epoch
 history_fine = model.fit(pf_train, validation_data=pf_val, epochs=n_epochs, initial_epoch=history.epoch[-1])
@@ -149,15 +153,15 @@ if choice == "y":
     n_epochs = + ft_epoch
     history_final = model.fit(pf_train, validation_data=pf_val, epochs=n_epochs, initial_epoch=history_fine.epoch[-1])
 
-#Test model
+# Test model
 image_batch, label_batch = pf_test.as_numpy_iterator().next()
 pred_labels = np.argmax(model.predict(image_batch), axis = 1)
 
-#Print results
+# Print results
 lab_and_pred = np.transpose(np.vstack((label_batch, pred_labels)))
 print(lab_and_pred)
 
-#Save model
+# Save model
 save = input("Save Model? (y/n)")
 if save == "y":
     model.save("saved_model/ARCM(rn50)")
