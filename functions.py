@@ -256,7 +256,7 @@ def plot_training(hist):
 
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion Matrix', cmap=plt.cm.Blues):
     '''
-    This function plot confusion matrix method from sklearn package.
+    This function plot confusion matrix method from sklearn.
     '''
     plt.figure(figsize=(10, 10))
     plt.imshow(cm, interpolation='nearest', cmap=cmap)

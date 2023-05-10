@@ -1,4 +1,6 @@
 # Settings
+import functions
+
 verbose = False
 
 # Imports
@@ -123,7 +125,7 @@ choice = input("Plot model to .png file? (y/n)")
 if choice == "y":
     plot_model(model, to_file = "rn50_model.png", show_shapes = True)
 
-#  Define learning rate schedule and optimiser
+# Define learning rate schedule and optimiser
 optimizer = optimizers.Adam(learning_rate = optimizers.schedules.CosineDecay(0.001, 500))
 loss = losses.SparseCategoricalCrossentropy()
 
